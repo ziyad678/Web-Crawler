@@ -54,3 +54,47 @@ func getHTML(rawURL string) (string, error) {
 	return string(body), nil
 
 }
+func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
+
+	baseUrl, err := url.Parse(rawBaseURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	currentUrl, err := url.Parse(rawCurrentURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if baseUrl.Hostname() != currentUrl.Hostname() {
+		return
+	}
+	currentNormal, err := normalizeURL(rawCurrentURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	_, ok := pages[currentNormal]
+	if !ok {
+		pages[currentNormal] = 1
+	} else {
+		pages[currentNormal]++
+	}
+	fmt.Println("getting html for page", currentNormal)
+	pageHTML, err := getHTML(rawCurrentURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("getting URLs from HTMP")
+	urls, err := getURLsFromHTML(pageHTML, rawCurrentURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, url := range urls {
+		fmt.Println("Calling crawl on", url)
+		crawlPage(rawBaseURL, url, pages)
+	}
+}
